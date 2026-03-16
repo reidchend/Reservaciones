@@ -73,6 +73,14 @@
     .info { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;
             padding:14px 16px; font-size:13px; color:#1e40af;
             margin-bottom:24px; line-height:1.5; }
+
+    .precios { display:grid; grid-template-columns:1fr 1fr; gap:8px;
+               margin-top:10px; }
+    .precio-item { background:#f8f6f1; border:1px solid var(--borde);
+                   border-radius:8px; padding:8px 12px; font-size:12px; }
+    .precio-item strong { display:block; color:var(--azul); font-size:13px; }
+    .precio-item span   { color:var(--gris); }
+
     footer { text-align:center; font-size:11px; color:var(--gris); margin-top:32px; }
   </style>
 </head>
@@ -114,26 +122,40 @@
       </div>
 
       <div class="sec">Detalles de la estadía</div>
-      <div class="campo">
+
+      <!-- Precios de referencia -->
+      <div class="precios">
+        <div class="precio-item"><strong>MATRIMONIAL</strong><span>$25.86 / noche · 2 pers.</span></div>
+        <div class="precio-item"><strong>DOBLE</strong><span>$30.17 / noche · 2 pers.</span></div>
+        <div class="precio-item"><strong>SUITE</strong><span>$30.17 / noche · 2 pers.</span></div>
+        <div class="precio-item"><strong>TRIPLE</strong><span>$34.48 / noche · 3 pers.</span></div>
+        <div class="precio-item"><strong>QUINTUPLE</strong><span>$38.79 / noche · 5 pers.</span></div>
+        <div class="precio-item"><strong>INDIVIDUAL</strong><span>$17.24 / noche · 1 pers.</span></div>
+      </div>
+
+      <div class="campo" style="margin-top:14px">
         <label>Tipo de habitación *</label>
         <select id="tipo_habitacion" name="tipo_habitacion" required>
           <option value="">— Seleccionar —</option>
-          <option value="Estándar">Matrimonial</option>
-          <option value="Doble">Doble</option>
-          <option value="Suite">Suite</option>
-          <option value="Familiar">Triple</option>
-          <option value="VIP">Quintuple</option>
-          <option value="Presidencial">Individual</option>
+          <option value="MATRIMONIAL">Matrimonial</option>
+          <option value="DOBLE">Doble</option>
+          <option value="SUITE">Suite</option>
+          <option value="TRIPLE">Triple</option>
+          <option value="QUINTUPLE">Quíntuple</option>
+          <option value="INDIVIDUAL">Individual</option>
         </select>
       </div>
+
       <div class="grid g3" style="margin-top:16px">
         <div class="campo"><label>Fecha entrada *</label>
           <input id="fecha_entrada" name="fecha_entrada" type="date" required></div>
         <div class="campo"><label>Fecha salida *</label>
           <input id="fecha_salida" name="fecha_salida" type="date" required></div>
         <div class="campo"><label>N° huéspedes</label>
-          <input id="num_huespedes" name="num_huespedes" type="number" min="1" max="10" value="1"></div>
+          <input id="num_huespedes" name="num_huespedes" type="number"
+                 min="1" max="10" value="1"></div>
       </div>
+
       <div class="campo" style="margin-top:16px">
         <label>Observaciones</label>
         <textarea id="notas" name="notas"
@@ -148,11 +170,6 @@
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// ÚNICA LÍNEA QUE DEBES CONFIGURAR:
-// Pega aquí la URL de tu Google Apps Script Web App.
-// Esta URL nunca cambia — la configuras una sola vez.
-// ─────────────────────────────────────────────────────────────────────────────
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0gMWrVJ67BOeiHJsxAq5s_fgVObgtpHJqA-joTuytSAAWNgwPjU1_vIgTKghcu_Bh/exec';
 
 // ── Fechas mínimas ────────────────────────────────────────────────────────────
@@ -161,10 +178,11 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0gMWrVJ67BOei
   const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const fe = document.getElementById('fecha_entrada');
   const fs = document.getElementById('fecha_salida');
-  fe.min = hoy;   fe.value = hoy;
+  fe.min = hoy;    fe.value = hoy;
   fs.min = manana; fs.value = manana;
   fe.addEventListener('change', function() {
-    const d = new Date(this.value); d.setDate(d.getDate()+1);
+    const d = new Date(this.value);
+    d.setDate(d.getDate() + 1);
     const s = d.toISOString().split('T')[0];
     fs.min = s;
     if (fs.value <= this.value) fs.value = s;
@@ -191,13 +209,13 @@ document.getElementById('form').addEventListener('submit', async function(e) {
   }
   if (!ok) {
     msg.className = 'err'; msg.style.display = 'block';
-    msg.textContent = '⚠ Completa todos los campos obligatorios.'; return;
+    msg.textContent = '⚠ Completa todos los campos obligatorios.';
+    return;
   }
 
   btn.disabled = true; btn.textContent = 'Enviando…';
   msg.style.display = 'none';
 
-  // Apps Script recibe URLSearchParams (no JSON) para evitar CORS preflight
   const p = new URLSearchParams();
   ['nombre','apellido','documento','telefono','email','nacionalidad',
    'tipo_habitacion','fecha_entrada','fecha_salida',
@@ -208,12 +226,11 @@ document.getElementById('form').addEventListener('submit', async function(e) {
   p.append('origen', 'web');
 
   try {
-    // no-cors: Apps Script no permite leer la respuesta desde el browser,
-    // pero la escritura en la Sheet sí ocurre correctamente.
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST', mode: 'no-cors',
+      method:  'POST',
+      mode:    'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: p.toString(),
+      body:    p.toString(),
     });
 
     msg.className = 'ok'; msg.style.display = 'block';
